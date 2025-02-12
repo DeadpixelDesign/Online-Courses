@@ -60,8 +60,8 @@
                         <label for="all">All</label>
                     </div>
                     <div>
-                        <input type="radio" name="status" value="live" id="live" placeholder="live">
-                        <label for="live">In-Person</label>
+                        <input type="radio" name="status" value="inperson" id="inperson" placeholder="inperson">
+                        <label for="inperson">In-Person</label>
                     </div>
                     <div>
                         <input type="radio" name="status" value="online" id="online" placeholder="online">
@@ -69,7 +69,7 @@
                     </div>
                     <div>
                         <input type="radio" name="status" value="ondemand" id="ondemand" placeholder="ondemand">
-                        <label for="online">On-Demand</label>
+                        <label for="ondemand">On-Demand</label>
                     </div>
                 </div>
 
@@ -136,6 +136,13 @@
                         const startDateA = parseDate(a.course_start_date);
                         const startDateB = parseDate(b.course_start_date);
                         return startDateA - startDateB;
+                    });
+
+                    // Sort courses by status, placing ondemand courses at the end
+                    excelData.sort((a, b) => {
+                        if (a.course_status === 'ondemand' && b.course_status !== 'ondemand') return 1;
+                        if (a.course_status !== 'ondemand' && b.course_status === 'ondemand') return -1;
+                        return 0;
                     });
 
                     // Convert the set to an array and sort it alphabetically
@@ -222,16 +229,11 @@
                     return;
                 }
 
-                let courseStatus;
-                if (row.online_bool === true) {
-                    courseStatus = 'online';
-                } else {
-                    courseStatus = 'in-person';
-                }
+                let courseStatus = row.course_status;
 
                 const rowCategories = row.course_categories ? row.course_categories.split(';').map(c => c.trim()) : [];
                 const matchesCategory = selectedCategories.size === 0 || [...selectedCategories].some(category => rowCategories.includes(category));
-                const matchesStatus = selectedStatus === 'all' || (selectedStatus === 'online' && row.online_bool) || (selectedStatus === 'in-person' && !row.online_bool);
+                const matchesStatus = selectedStatus === 'all' || selectedStatus === courseStatus;
                 if (!matchesStatus || !matchesCategory) return;
                 hasResults = true;
 
@@ -248,7 +250,9 @@
                 const courseUrl = row.course_url ? row.course_url : 'javascript:void(0)';
 
                 // Determine the course type text
-                const courseTypeText = row.online_bool ? '<i class="bi bi-wifi"> </i> Online' : '<i class="bi bi-people-fill"> </i> In-Person';
+                const courseTypeText = courseStatus === 'online' ? '<i class="bi bi-wifi"> </i> Online' :
+                    courseStatus === 'inperson' ? '<i class="bi bi-people-fill"> </i> In-Person' :
+                        '<i class="bi bi-play-circle"> </i> On-Demand';
 
                 const courseElement = document.createElement('article');
                 courseElement.classList.add('mb-3');
@@ -304,7 +308,6 @@
             }
         }
     </script>
-
 
     <!--end of course list-->
 
