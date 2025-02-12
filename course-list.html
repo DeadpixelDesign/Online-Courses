@@ -215,9 +215,16 @@
         function displayPage(page) {
             const container = document.getElementById('courses');
             container.innerHTML = '';
+
+            // Filter data based on selected status
+            const filteredData = excelData.filter(row => {
+                const courseStatus = row.course_status;
+                return selectedStatus === 'all' || selectedStatus === courseStatus;
+            });
+
             const start = (page - 1) * itemsPerPage;
             const end = start + itemsPerPage;
-            const pageData = excelData.slice(start, end);
+            const pageData = filteredData.slice(start, end);
             let hasResults = false;
 
             pageData.forEach(row => {
@@ -233,8 +240,7 @@
 
                 const rowCategories = row.course_categories ? row.course_categories.split(';').map(c => c.trim()) : [];
                 const matchesCategory = selectedCategories.size === 0 || [...selectedCategories].some(category => rowCategories.includes(category));
-                const matchesStatus = selectedStatus === 'all' || selectedStatus === courseStatus;
-                if (!matchesStatus || !matchesCategory) return;
+                if (!matchesCategory) return;
                 hasResults = true;
 
                 const formattedStartDate = !isNaN(courseStartDate.getTime()) ? courseStartDate.toLocaleDateString('en-US', {
@@ -294,7 +300,7 @@
             // Update pagination
             const paginationContainer = document.getElementById('pagination');
             paginationContainer.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
+            for (let i = 1; i <= Math.ceil(filteredData.length / itemsPerPage); i++) {
                 const pageButton = document.createElement('button');
                 pageButton.textContent = i;
                 pageButton.classList.add('page-button');
