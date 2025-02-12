@@ -121,11 +121,21 @@
                         }
                     });
 
-                    // Sort courses by start date
+                    // Sort courses by end date, placing past courses at the end
+                    const today = new Date();
                     excelData.sort((a, b) => {
-                        const dateA = new Date(a.course_start_date);
-                        const dateB = new Date(b.course_start_date);
-                        return dateA - dateB;
+                        const endDateA = parseDate(a.course_end_date);
+                        const endDateB = parseDate(b.course_end_date);
+                        if (endDateA < today && endDateB >= today) return 1;
+                        if (endDateA >= today && endDateB < today) return -1;
+                        return endDateA - endDateB;
+                    });
+
+                    // Sort courses by start date for the remaining courses
+                    excelData.sort((a, b) => {
+                        const startDateA = parseDate(a.course_start_date);
+                        const startDateB = parseDate(b.course_start_date);
+                        return startDateA - startDateB;
                     });
 
                     // Convert the set to an array and sort it alphabetically
@@ -139,6 +149,17 @@
                 })
                 .catch(error => console.error('Error reading Excel file:', error));
         });
+
+        function parseDate(date) {
+            if (typeof date === 'number') {
+                // If the date is in Excel serial date format
+                const parsedDate = XLSX.SSF.parse_date_code(date);
+                return new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
+            } else {
+                // If the date is in string format
+                return new Date(date);
+            }
+        }
 
         function generateCategoryFilters(categories) {
             const filterContainer = document.getElementById('filter-container');
@@ -183,17 +204,6 @@
                 displayPage(1); // Reset to the first page on filter change
             });
         });
-
-        function parseDate(date) {
-            if (typeof date === 'number') {
-                // If the date is in Excel serial date format
-                const parsedDate = XLSX.SSF.parse_date_code(date);
-                return new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
-            } else {
-                // If the date is in string format
-                return new Date(date);
-            }
-        }
 
         function displayPage(page) {
             const container = document.getElementById('courses');
